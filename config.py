@@ -1,12 +1,15 @@
 def config():
     return {
         "cards": ["card0"],
+        "update_rate": 5,
         "fan": {
             "enable": "/sys/class/drm/CARD/device/hwmon/hwmon3/pwm1_enable",
             "control": "/sys/class/drm/CARD/device/hwmon/hwmon3/pwm1",
+            "start": 0.2,
+            "step": 0.01,
             "alert": 0.80,
-            "stop": 0.95,
-            "range": (0, 255)
+            "range": (0.2, 0.95),
+            "hw_range": (0, 255),
         },
         "temps": [
             {
