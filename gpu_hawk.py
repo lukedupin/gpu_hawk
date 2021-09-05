@@ -36,7 +36,7 @@ def calculateTemp( card, temps ):
 # Start program
 
 cfg = config()
-fan_spd = [cfg['fan']['start'] for _ in range(len(cfg["cards"]))]
+fan_spd = [(cfg['fan']['start'], None) for _ in range(len(cfg["cards"]))]
 hw_range = cfg['fan']['hw_range']
 range = cfg['fan']['range']
 
@@ -72,12 +72,19 @@ while True:
         if emergency:
             print("SHUTDOWN!!!!")
 
+        spd, last_diff = fan_spd[idx]
+
+        change = 0
+        if last_diff is not None:
+            change = diff - last_diff
+
+        #print(f"{diff} {last_diff} {change}")
+
         # Calc our new fan speed
-        spd = fan_spd[idx]
-        if diff <= -2.0:
-            spd -= cfg['fan']['step'] # Decrease more consistently
-        elif diff >= 1.0:
+        if diff >= 1.0 and change >= 0:
             spd += diff * cfg['fan']['step'] # Increase by the amount we're over
+        elif diff <= -2.0 and change <= 0:
+            spd -= cfg['fan']['step'] # Decrease more consistently
 
         # Cap the speed
         if spd < range[0]:
@@ -89,9 +96,10 @@ while True:
         temp_infos.append( (card, temps, spd) )
 
         # If the speed is the same, do nothing
-        if spd == fan_spd[idx]:
+        if spd == fan_spd[idx][0]:
+            fan_spd[idx] = (spd, diff)
             continue
-        fan_spd[idx] = spd
+        fan_spd[idx] = (spd, diff)
 
         # Update the difference
         raw = int((hw_range[1] - hw_range[0]) * spd + hw_range[0])
