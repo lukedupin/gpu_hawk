@@ -2,10 +2,11 @@ def config():
     return {
         "cards": ["card0"],
         "update_rate": 5,
+        "log_file": "gpu_hawk.log",
         "fan": {
             "enable": "/sys/class/drm/CARD/device/hwmon/hwmon3/pwm1_enable",
             "control": "/sys/class/drm/CARD/device/hwmon/hwmon3/pwm1",
-            "start": 0.2,
+            "start": 0.5,
             "step": 0.01,
             "alert": 0.80,
             "range": (0.2, 0.95),
