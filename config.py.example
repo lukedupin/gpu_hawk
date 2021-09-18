@@ -1,11 +1,19 @@
 def config():
     return {
-        "cards": ["card0"],
+        "cards": [
+            {
+                "card": "card0",
+                "hwmon": "hwmon3",
+                "pwm": "pwm1",
+                "gpu": "temp2_input",
+                "vram": "temp3_input",
+            }
+        ],
         "update_rate": 5,
         "log_file": "gpu_hawk.log",
         "fan": {
-            "enable": "/sys/class/drm/CARD/device/hwmon/hwmon3/pwm1_enable",
-            "control": "/sys/class/drm/CARD/device/hwmon/hwmon3/pwm1",
+            "enable": "/sys/class/drm/CARD/device/hwmon/HWMON/PWM_enable",
+            "control": "/sys/class/drm/CARD/device/hwmon/HWMON/PWM",
             "start": 0.5,
             "step": 0.01,
             "alert": 0.80,
@@ -15,13 +23,13 @@ def config():
         "temps": [
             {
                 "name": "GPU",
-                "path": "/sys/class/drm/CARD/device/hwmon/hwmon3/temp2_input",
+                "path": "/sys/class/drm/CARD/device/hwmon/HWMON/GPU",
                 "target": 60.0,
                 "limit": 80.0,
             },
             {
                 "name": "VRAM",
-                "path": "/sys/class/drm/CARD/device/hwmon/hwmon3/temp3_input",
+                "path": "/sys/class/drm/CARD/device/hwmon/HWMON/VRAM",
                 "target": 80.0,
                 "limit": 95.0,
             },
