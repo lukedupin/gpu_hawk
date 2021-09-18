@@ -4,8 +4,8 @@ from config import config
 import re, util, time
 
 def replacer( filename, card ):
-    for k, v in card:
-        filename = filename.replace(k.upper(), v)
+    for k in card.keys():
+        filename = filename.replace(k.upper(), card[k])
     return filename
 
 def writeFile( filename, card, value ):
@@ -34,7 +34,7 @@ def calculateTemp( card, temps ):
         if diff is None or diff < d:
             diff = d
 
-        result.append( (temp['card'], int(round(value))) )
+        result.append( (temp['name'], int(round(value))) )
 
     return (diff, result, False)
 
