@@ -34,7 +34,7 @@ def calculateTemp( card, temps ):
         if diff is None or diff < d:
             diff = d
 
-        result.append( (temp['name'], int(round(value))) )
+        result.append( (temp['card'], int(round(value))) )
 
     return (diff, result, False)
 
@@ -48,17 +48,17 @@ range = cfg['fan']['range']
 # Configure initial fan and OC settings
 for card in cfg["cards"]:
     start = cfg['fan']['start']
-    print(f"Setup for {card['name']}")
+    print(f"Setup for {card['card']}")
 
     # Enable PWM
     writeFile( cfg['fan']['enable'], card, 1 )
     result = util.xint( readFile( cfg['fan']['enable'], card )) == 1
-    print("    Enabling fan PWM enable for %s... %s" % (card['name'], "done" if result else "failed") )
+    print("    Enabling fan PWM enable for %s... %s" % (card['card'], "done" if result else "failed") )
     if not result:
         exit(-1)
 
     # Set initial fan speed
-    print(f"    Setting {card['name']} speed: {int(round(start * 100))}%")
+    print(f"    Setting {card['card']} speed: {int(round(start * 100))}%")
     raw = int((hw_range[1] - hw_range[0]) * start + hw_range[0])
     writeFile( cfg['fan']['control'], card, raw )
 
@@ -109,12 +109,12 @@ while True:
         # Update the difference
         raw = int((hw_range[1] - hw_range[0]) * spd + hw_range[0])
         writeFile( cfg['fan']['control'], card, raw )
-        print(f"Updating {card['name']} fan to {int(spd * 100.0)}%")
+        print(f"Updating {card['card']} fan to {int(spd * 100.0)}%")
 
     # Dump our temp info
     for info in temp_infos:
         card, temps, fan = info
-        print(f"Card: {card['name']}")
+        print(f"Card: {card['card']}")
         print("    %-8s %d%%" % ("Fan", int(round(fan * 100.0))))
         for tmp in temps:
             print("    %-8s %dC" % (tmp[0], tmp[1]))
