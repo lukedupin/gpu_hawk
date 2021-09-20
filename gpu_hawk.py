@@ -89,7 +89,7 @@ while True:
         # Calc our new fan speed
         if diff >= 1.0 and change >= 0:
             spd += diff * cfg['fan']['step'] # Increase by the amount we're over
-        elif diff <= -2.0 and change <= 0:
+        elif diff <= -1.0 and change <= 0:
             delay_drop[idx] += 1
             if delay_drop[idx] >= cfg['delay_drop']:
                 spd -= cfg['fan']['step'] # Decrease more consistently
