@@ -93,7 +93,7 @@ while True:
             delay_drop[idx] += 1
             if delay_drop[idx] >= cfg['delay_drop']:
                 spd -= cfg['fan']['step'] # Decrease more consistently
-                delay_drop[idx] 0
+                delay_drop[idx] = 0
 
         # Cap the speed
         if spd < fan_range[0]:
