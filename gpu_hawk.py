@@ -43,7 +43,8 @@ def calculateTemp( card, temps ):
 cfg = config()
 fan_spd = [(cfg['fan']['start'], None) for _ in range(len(cfg["cards"]))]
 hw_range = cfg['fan']['hw_range']
-range = cfg['fan']['range']
+fan_range = cfg['fan']['range']
+delay_drop = [0 for x in range(len(cfg["cards"]))]
 
 # Configure initial fan and OC settings
 for card in cfg["cards"]:
@@ -89,13 +90,16 @@ while True:
         if diff >= 1.0 and change >= 0:
             spd += diff * cfg['fan']['step'] # Increase by the amount we're over
         elif diff <= -2.0 and change <= 0:
-            spd -= cfg['fan']['step'] # Decrease more consistently
+            delay_drop[idx] += 1
+            if delay_drop[idx] >= cfg['delay_drop']:
+                spd -= cfg['fan']['step'] # Decrease more consistently
+                delay_drop[idx] 0
 
         # Cap the speed
-        if spd < range[0]:
-            spd = range[0]
-        if spd > range[1]:
-            spd = range[1]
+        if spd < fan_range[0]:
+            spd = fan_range[0]
+        if spd > fan_range[1]:
+            spd = fan_range[1]
 
         # Store the temps and speed
         temp_infos.append( (card, temps, spd) )

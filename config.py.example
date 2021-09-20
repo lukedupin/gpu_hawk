@@ -10,6 +10,7 @@ def config():
             }
         ],
         "update_rate": 5,
+        "delay_drop": 1,
         "log_file": "gpu_hawk.log",
         "fan": {
             "enable": "/sys/class/drm/CARD/device/hwmon/HWMON/PWM_enable",
