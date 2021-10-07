@@ -3,20 +3,24 @@
 from config import config
 import re, util, time
 
+
 def replacer( filename, card ):
     for k in card.keys():
         filename = filename.replace(k.upper(), card[k])
     return filename
+
 
 def writeFile( filename, card, value ):
     handle = open( replacer( filename, card ), "w")
     handle.write( f"{value}\n" )
     # handle.close()
 
+
 def readFile( filename, card ):
     handle = open( replacer( filename, card ) )
     for idx, line in enumerate(handle.readlines()):
         return line.rstrip()
+
 
 def calculateTemp( card, temps ):
     diff = None
@@ -38,37 +42,39 @@ def calculateTemp( card, temps ):
 
     return (diff, result, False)
 
-# Start program
 
-cfg = config()
-fan_spd = [(cfg['fan']['start'], None) for _ in range(len(cfg["cards"]))]
-hw_range = cfg['fan']['hw_range']
-fan_range = cfg['fan']['range']
-delay_drop = [0 for x in range(len(cfg["cards"]))]
+def setupGpus( cfg ):
+    fan_spd = [(cfg['fan']['start'], None) for _ in range(len(cfg["cards"]))]
+    hw_range = cfg['fan']['hw_range']
+    fan_range = cfg['fan']['range']
 
-# Configure initial fan and OC settings
-for card in cfg["cards"]:
-    start = cfg['fan']['start']
-    print(f"Setup for {card['card']}")
+    # Configure initial fan and OC settings
+    for card in cfg["cards"]:
+        start = cfg['fan']['start']
+        print(f"Setup for {card['card']}")
 
-    # Enable PWM
-    writeFile( cfg['fan']['enable'], card, 1 )
-    result = util.xint( readFile( cfg['fan']['enable'], card )) == 1
-    print("    Enabling fan PWM enable for %s... %s" % (card['card'], "done" if result else "failed") )
-    if not result:
-        exit(-1)
+        # Enable PWM
+        writeFile( cfg['fan']['enable'], card, 1 )
+        result = util.xint( readFile( cfg['fan']['enable'], card )) == 1
+        print("    Enabling fan PWM enable for %s... %s" % (card['card'], "done" if result else "failed") )
+        if not result:
+            exit(-1)
 
-    # Set initial fan speed
-    print(f"    Setting {card['card']} speed: {int(round(start * 100))}%")
-    raw = int((hw_range[1] - hw_range[0]) * start + hw_range[0])
-    writeFile( cfg['fan']['control'], card, raw )
+        # Set initial fan speed
+        print(f"    Setting {card['card']} speed: {int(round(start * 100))}%")
+        raw = int((hw_range[1] - hw_range[0]) * start + hw_range[0])
+        writeFile( cfg['fan']['control'], card, raw )
 
-    # SEtup the OC profile
+        # SEtup the OC profile
 
-    print("")
+        print("")
 
-# Fan loop
-while True:
+
+def updateFans( cfg, delay_drop ):
+    fan_spd = [(cfg['fan']['start'], None) for _ in range(len(cfg["cards"]))]
+    hw_range = cfg['fan']['hw_range']
+    fan_range = cfg['fan']['range']
+
     print("")
     print("--------------------")
 
@@ -76,7 +82,7 @@ while True:
     for idx, card in enumerate(cfg["cards"]):
         diff, temps, emergency = calculateTemp( card, cfg['temps'] )
         if emergency:
-            print("SHUTDOWN!!!!")
+            return False
 
         spd, last_diff = fan_spd[idx]
 
@@ -123,4 +129,36 @@ while True:
         for tmp in temps:
             print("    %-8s %dC" % (tmp[0], tmp[1]))
 
-    time.sleep( cfg['update_rate'])
+    # Everything is good
+    return True
+
+
+def resetGpus( cfg ):
+    pass
+
+
+def killTeamRed():
+    pass
+
+
+#Main loop
+try:
+    cfg = config()
+    setupGpus( cfg )
+
+    # Used for update fans to keep track of when to drop the temp
+    delay_drop = [0 for x in range(len(cfg["cards"]))]
+
+    while True:
+        # If we fail to run, kill team red for safety
+        if not updateFans( cfg, delay_drop ):
+            killTeamRed()
+            break
+
+        time.sleep(cfg['update_rate'])
+
+except KeyboardInterrupt:
+    killTeamRed()
+
+# Reset the overclock back to normal
+resetGpus( cfg )
