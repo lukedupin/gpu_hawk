@@ -7,6 +7,9 @@ def config():
                 "pwm": "pwm1",
                 "gpu": "temp2_input",
                 "vram": "temp3_input",
+                "oc_mem": (1000, 1060),
+                "oc_gpu": (2480, 2200),
+                "oc_file": "/sys/class/drm/CARD/device/pp_od_clk_voltage",
             }
         ],
         "update_rate": 5,

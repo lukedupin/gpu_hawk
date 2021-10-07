@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
 from config import config
-import re, util, time
+import re, util, time, pyproc2
 
 
 def replacer( filename, card ):
     for k in card.keys():
-        filename = filename.replace(k.upper(), card[k])
+        filename = filename.replace(k.upper(), str(card[k]))
     return filename
 
 
@@ -44,7 +44,6 @@ def calculateTemp( card, temps ):
 
 
 def setupGpus( cfg ):
-    fan_spd = [(cfg['fan']['start'], None) for _ in range(len(cfg["cards"]))]
     hw_range = cfg['fan']['hw_range']
     fan_range = cfg['fan']['range']
 
@@ -59,19 +58,45 @@ def setupGpus( cfg ):
         print("    Enabling fan PWM enable for %s... %s" % (card['card'], "done" if result else "failed") )
         if not result:
             exit(-1)
+            return
 
         # Set initial fan speed
         print(f"    Setting {card['card']} speed: {int(round(start * 100))}%")
         raw = int((hw_range[1] - hw_range[0]) * start + hw_range[0])
         writeFile( cfg['fan']['control'], card, raw )
 
-        # SEtup the OC profile
+        # Memory OC
+        mem_oc_range = card['oc_mem']
+        print(f"    Overclocking MEMORY to {mem_oc_range}")
+        writeFile( card["oc_file"], card, f"m 1 {mem_oc_range}" )
 
-        print("")
+        # GPU OC
+        gpu_oc_range = card['oc_gpu']
+        print(f"    Overclocking GPU SCLK to {gpu_oc_range}MHz")
+        writeFile( card["oc_file"], card, f"s 1 {gpu_oc_range}" )
+
+        # Write the changes
+        writeFile( card["oc_file"], card, f"c" )
 
 
-def updateFans( cfg, delay_drop ):
-    fan_spd = [(cfg['fan']['start'], None) for _ in range(len(cfg["cards"]))]
+def resetGpus( cfg ):
+    # Configure initial fan and OC settings
+    for card in cfg["cards"]:
+        start = cfg['fan']['start']
+        print(f"Resetting GPUs")
+
+        # Give PWM control back to the driver
+        writeFile( cfg['fan']['enable'], card, 2 )
+        result = util.xint( readFile( cfg['fan']['enable'], card )) == 2
+        print("    Disabling fan PWM enable for %s... %s" % (card['card'], "done" if result else "failed") )
+
+        # Reset changes
+        print(f"    Resetting MEMORY OC")
+        print(f"    Resetting GPU SCLK OC")
+        writeFile( card["oc_file"], card, f"r" )
+
+
+def updateFans( cfg, delay_drop, fan_spd ):
     hw_range = cfg['fan']['hw_range']
     fan_range = cfg['fan']['range']
 
@@ -133,12 +158,23 @@ def updateFans( cfg, delay_drop ):
     return True
 
 
-def resetGpus( cfg ):
-    pass
+def killTeamRed(force=False):
+    print("Killing TeamRedMiner")
 
+    pr = pyproc2.find('teamredminer')
+    if not isinstance( pr, list ):
+        pr = [pr]
 
-def killTeamRed():
-    pass
+    # Stop whatever we find
+    for p in pr:
+        try:
+            p.term()
+            if force:
+                time.sleep(1)
+                p.kill()
+
+        except NotImplementedError:
+            pass
 
 
 #Main loop
@@ -148,17 +184,24 @@ try:
 
     # Used for update fans to keep track of when to drop the temp
     delay_drop = [0 for x in range(len(cfg["cards"]))]
+    fan_spd = [(cfg['fan']['start'], None) for _ in range(len(cfg["cards"]))]
 
     while True:
         # If we fail to run, kill team red for safety
-        if not updateFans( cfg, delay_drop ):
-            killTeamRed()
+        if not updateFans( cfg, delay_drop, fan_spd ):
+            print("Cannot control heat, STOP to save GPUs")
+            killTeamRed( True )
             break
 
         time.sleep(cfg['update_rate'])
 
 except KeyboardInterrupt:
-    killTeamRed()
+    print("Received Ctrl+C. Exiting...")
 
 # Reset the overclock back to normal
+killTeamRed()
 resetGpus( cfg )
+
+print("")
+print("Run completed successfully")
+print("")
